@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0f14">
+<title>Einstein Quant</title>
+<meta name="description" content="EINSTEIN QUANT: AI asset analysis, a market screener, strategies and trading bots in one platform. Your funds stay in your own trading account.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one 1200px column of full-width bands; hero splits copy | live bot canvas; screener is a working table. */
+:root{
+  --bg:#0d0f14; --surface:#151923; --band:#10131a; --line:#262b38; --line2:#1f2430;
+  --fg:#e8eaf0; --strong:#ffffff; --muted:#b7bdc9; --dim:#9aa3b2; --faint:#3a4153;
+  --accent:#3ee6b4; --on-accent:#0b0d12; --warn:#f2a65a; --down:#ff7f7f;
+  --display:'Space Grotesk','Noto Sans SC',system-ui,sans-serif;
+  --body:'Inter','Noto Sans SC',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+a{color:var(--fg)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);color:var(--strong);text-wrap:balance;margin:0}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+.h2{font-size:clamp(28px,3.6vw,44px);line-height:1.15}
+.lead{font-size:18px;color:var(--muted);max-width:640px}
+.sec{padding-block:88px}
+.sec-head{display:flex;flex-direction:column;gap:14px;max-width:720px;margin-bottom:44px}
+.band{background:var(--band);border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:12px 24px;border-radius:12px;font-weight:600;font-size:16px;text-decoration:none;cursor:pointer;border:1px solid transparent;font-family:var(--body)}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-ghost{border-color:#2f3546;color:var(--fg);background:transparent}
+.btn-ghost:hover{border-color:var(--dim)}
+.btn-lg{font-size:17px;padding:16px 26px}
+
+/* header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(13,15,20,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line2)}
+.hdr{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo span{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:.06em;color:var(--strong)}
+.nav{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.nav a.l{color:var(--muted);text-decoration:none;font-size:15px}
+.nav a.l:hover{color:var(--strong)}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.lang button{font:600 13px var(--body);color:var(--dim);background:none;border:0;padding:6px 10px;border-radius:7px;cursor:pointer;min-height:34px}
+.lang button[aria-pressed="true"]{background:#232938;color:var(--strong)}
+@media (max-width:900px){.nav a.l{display:none}}
+
+/* hero */
+.hero{display:flex;flex-wrap:wrap;align-items:center;gap:56px;padding-block:72px 64px}
+.hero-copy{flex:1 1 440px;min-width:0;display:flex;flex-direction:column;gap:24px}
+.pill{align-self:flex-start;font-family:var(--mono);font-size:13px;color:var(--accent);border:1px solid #2a3040;border-radius:999px;padding:6px 14px}
+.hero h1{font-weight:700;font-size:clamp(36px,5.2vw,62px);line-height:1.08;letter-spacing:-.02em}
+.hero .lead{font-size:19px}
+.row{display:flex;flex-wrap:wrap;gap:12px}
+.checks{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:14px;color:var(--dim)}
+.checks span{display:inline-flex;align-items:center;gap:8px}
+.hero-vis{flex:1 1 420px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.panel-top{display:flex;align-items:center;gap:10px}
+.panel-top b{font-family:var(--display);font-weight:600;font-size:15px}
+.live-chip{margin-left:auto;font-size:12px;font-weight:600;color:var(--on-accent);background:var(--accent);padding:3px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
+.live-chip i{width:6px;height:6px;border-radius:50%;background:var(--on-accent);animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+#botCanvas{width:100%;height:240px;display:block;background:#0f1219;border:1px solid #222838;border-radius:12px}
+.bot-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.bot-stats div{background:#0f1219;border:1px solid #222838;border-radius:10px;padding:10px 12px}
+.bot-stats small{display:block;font-size:12px;color:var(--dim)}
+.bot-stats strong{font-family:var(--mono);font-size:18px;font-variant-numeric:tabular-nums}
+.note{font-size:12px;color:var(--dim)}
+
+/* trust */
+.trust{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px 36px;padding-block:24px;font-size:15px;color:var(--muted)}
+.trust span{display:inline-flex;align-items:center;gap:10px}
+
+/* screener */
+.scr-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:500 14px var(--body);color:var(--muted);background:transparent;border:1px solid var(--line);padding:8px 14px;border-radius:9px;cursor:pointer;min-height:40px}
+.tabs button[aria-selected="true"]{background:#222838;color:var(--strong);border-color:#353c4f}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--dim)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.dot.on{background:var(--accent);animation:blink 1.6s infinite}
+.dot.off{background:var(--warn)}
+.tbl-box{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;min-width:640px;font-variant-numeric:tabular-nums}
+th{font:500 13px var(--body);color:var(--dim);text-align:right;padding:14px 18px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+td{padding:13px 18px;border-bottom:1px solid var(--line2);text-align:right;font-family:var(--mono);font-size:14px;transition:background-color .6s}
+tr:last-child td{border-bottom:0}
+td .pair{font-family:var(--body);font-weight:600;color:var(--strong)}
+td .quote{font-family:var(--body);color:var(--dim);font-size:13px}
+.up{color:var(--accent)} .dn{color:var(--down)}
+td.flash-up{background:rgba(62,230,180,.12)} td.flash-dn{background:rgba(255,127,127,.12)}
+.scr-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;margin-top:12px;font-size:13px;color:var(--dim)}
+.scr-foot a{color:var(--muted)}
+.linkbtn{background:none;border:0;color:var(--accent);font:600 13px var(--body);cursor:pointer;padding:4px 0}
+
+/* features */
+.feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.feat{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px;transition:border-color .2s,transform .2s}
+.feat:hover{border-color:#3d465c;transform:translateY(-3px)}
+.feat:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.feat-art{height:120px;border-radius:12px;background:#0f1219;border:1px solid #222838;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.feat-t{font-family:var(--display);font-size:20px;font-weight:600;color:var(--strong)}
+.feat-s{color:var(--muted)}
+.feat-more{margin-top:auto;font-weight:600;color:var(--accent);display:inline-flex;align-items:center;gap:6px;font-size:15px}
+/* feature animations */
+.scan{animation:scan 2.6s ease-in-out infinite}
+@keyframes scan{0%,100%{transform:translateX(0)}50%{transform:translateX(150px)}}
+.bar{transform-origin:bottom;animation:grow 2.6s ease-in-out infinite}
+@keyframes grow{0%,100%{transform:scaleY(.7)}50%{transform:scaleY(1)}}
+.frow{animation:frow 3s infinite}
+.frow:nth-of-type(2){animation-delay:1s}.frow:nth-of-type(3){animation-delay:2s}
+@keyframes frow{0%,30%{fill:var(--accent);opacity:1}31%,100%{fill:#2a3142;opacity:1}}
+.draw{stroke-dasharray:260;stroke-dashoffset:260;animation:draw 3s ease-out infinite}
+@keyframes draw{0%{stroke-dashoffset:260}60%,100%{stroke-dashoffset:0}}
+.eye{transform-box:fill-box;transform-origin:center;animation:eye 3.2s infinite}
+@keyframes eye{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.gear{transform-box:fill-box;transform-origin:center;animation:spin 6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ant{animation:blink 1.4s infinite}
+
+/* dialog */
+dialog{max-width:620px;width:calc(100% - 32px);border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--fg);padding:0}
+dialog::backdrop{background:rgba(5,6,10,.7);backdrop-filter:blur(3px)}
+.dlg{padding:28px;display:flex;flex-direction:column;gap:18px}
+.dlg-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.dlg h3{font-size:26px}
+.dlg ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px;color:var(--muted)}
+.dlg ul b{color:var(--strong)}
+.x{background:#222838;border:0;color:var(--fg);width:44px;height:44px;border-radius:10px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center}
+
+/* safety, steps, markets, pricing */
+.split{display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start}
+.split>*{flex:1 1 380px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.item{display:flex;gap:18px;padding:22px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.item .k{font-family:var(--mono);font-weight:600;color:var(--accent);font-size:18px}
+.item h3{font-family:var(--body);font-size:17px;margin-bottom:4px}
+.item p{color:var(--muted)}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}
+.step{border-top:2px solid #2f3546;padding-top:22px;display:flex;flex-direction:column;gap:10px}
+.step:first-child{border-color:var(--accent)}
+.step .n{font-family:var(--mono);font-size:38px;font-weight:600;color:var(--faint)}
+.step h3{font-size:21px}
+.step p{color:var(--muted)}
+.mk{padding:26px;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.mk .tk{font-family:var(--mono);color:var(--accent);font-size:14px}
+.mk h3{font-size:23px}.mk p{color:var(--muted)}
+.prices{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
+.plan{padding:26px;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:flex;flex-direction:column;gap:14px}
+.plan.hot{border:2px solid var(--accent);background:#171c27}
+.plan h3{font-size:20px}
+.plan .amt{display:flex;align-items:baseline;gap:6px}
+.plan .amt b{font-family:var(--display);font-size:40px;color:var(--strong)}
+.plan .amt span{color:var(--dim)}
+.plan p{color:var(--muted);flex-grow:1}
+.tag{font-size:12px;font-weight:600;color:var(--on-accent);background:var(--accent);padding:3px 10px;border-radius:999px}
+.faq{max-width:860px}
+.qa{padding:22px 0;border-bottom:1px solid var(--line)}
+.qa:last-child{border-bottom:0}
+.qa h3{font-family:var(--body);font-size:18px;margin-bottom:6px}
+.qa p{color:var(--muted)}
+.cta-box{background:var(--surface);border:1px solid #2a3040;border-radius:24px;padding:clamp(28px,6vw,68px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:28px}
+.cta-box>div{flex:1 1 420px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.code{display:inline-flex;flex-wrap:wrap;align-items:center;gap:10px;font-family:var(--mono);font-size:14px;color:var(--dim)}
+.code output{color:var(--accent);user-select:all;word-break:break-all}
+.copy{font:600 13px var(--body);background:#222838;color:var(--fg);border:0;border-radius:8px;padding:8px 12px;cursor:pointer;min-height:36px}
+footer{border-top:1px solid var(--line2)}
+.foot{padding-block:40px 56px;display:flex;flex-direction:column;gap:16px;font-size:14px;color:var(--dim)}
+.foot-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+.foot-top span{font-family:var(--display);font-weight:700;letter-spacing:.06em;color:var(--fg)}
+.legal{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<header>
+  <div class="wrap hdr">
+    <a class="logo" href="#top" aria-label="Einstein Quant">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" stroke="#3ee6b4" stroke-width="2"/><path d="M8 18l4-5 3 3 5-7" stroke="#3ee6b4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>EINSTEIN QUANT</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a class="l" href="#bo-loc" data-i18n="nav_screener"></a>
+      <a class="l" href="#tinh-nang" data-i18n="nav_features"></a>
+      <a class="l" href="#an-toan" data-i18n="nav_safety"></a>
+      <a class="l" href="#bang-gia" data-i18n="nav_pricing"></a>
+      <a class="l" href="#hoi-dap" data-i18n="nav_faq"></a>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="vi" aria-pressed="true">VI</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+        <button type="button" data-lang="zh" aria-pressed="false">中文</button>
+      </div>
+      <a class="btn btn-primary ref" href="https://einstq.com/?invite=YAOoHGPpXFqHR28MNvDhqQ" target="_blank" rel="noopener" data-i18n="cta_nav"></a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+<section class="wrap hero">
+  <div class="hero-copy">
+    <span class="pill" data-i18n="hero_tag"></span>
+    <h1 data-i18n="hero_h1"></h1>
+    <p class="lead" data-i18n="hero_p"></p>
+    <div class="row">
+      <a class="btn btn-primary btn-lg ref" href="https://einstq.com/?invite=YAOoHGPpXFqHR28MNvDhqQ" target="_blank" rel="noopener"><span data-i18n="hero_cta"></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <a class="btn btn-ghost btn-lg" href="#bo-loc" data-i18n="hero_cta2"></a>
+    </div>
+    <div class="checks">
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3ee6b4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg><span data-i18n="hero_c1"></span></span>
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3ee6b4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg><span data-i18n="hero_c2"></span></span>
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3ee6b4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg><span data-i18n="hero_c3"></span></span>
+    </div>
+  </div>
+  <div class="hero-vis">
+    <div class="panel">
+      <div class="panel-top">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3ee6b4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9 16h6"/></svg>
+        <b data-i18n="bot_title"></b>
+        <span class="live-chip"><i></i><span data-i18n="bot_status"></span></span>
+      </div>
+      <canvas id="botCanvas" role="img" data-i18n-aria="bot_aria"></canvas>
+      <div class="bot-stats">
+        <div><small data-i18n="bot_buys"></small><strong class="up" id="nBuy">0</strong></div>
+        <div><small data-i18n="bot_sells"></small><strong style="color:var(--warn)" id="nSell">0</strong></div>
+        <div><small data-i18n="bot_grid"></small><strong>5</strong></div>
+      </div>
+      <p class="note" data-i18n="bot_note"></p>
+    </div>
+  </div>
+</section>
+
+<div class="band">
+  <div class="wrap trust">
+    <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3ee6b4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/></svg><span data-i18n="trust1"></span></span>
+    <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3ee6b4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg><span data-i18n="trust2"></span></span>
+    <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3ee6b4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></svg><span data-i18n="trust3"></span></span>
+  </div>
+</div>
+
+<section id="bo-loc" class="wrap sec">
+  <div class="sec-head">
+    <span class="eyebrow" data-i18n="scr_eyebrow"></span>
+    <h2 class="h2" data-i18n="scr_h2"></h2>
+    <p class="lead" data-i18n="scr_p"></p>
+  </div>
+  <div class="scr-bar">
+    <div class="tabs" role="tablist" aria-label="Screener">
+      <button type="button" role="tab" data-sort="hot" aria-selected="true" data-i18n="scr_tab_hot"></button>
+      <button type="button" role="tab" data-sort="gain" aria-selected="false" data-i18n="scr_tab_gain"></button>
+      <button type="button" role="tab" data-sort="lose" aria-selected="false" data-i18n="scr_tab_lose"></button>
+      <button type="button" role="tab" data-sort="vol" aria-selected="false" data-i18n="scr_tab_vol"></button>
+    </div>
+    <span class="status" aria-live="polite"><span class="dot" id="sDot"></span><span id="sText"></span></span>
+  </div>
+  <div class="tbl-box">
+    <table>
+      <thead><tr>
+        <th scope="col" data-i18n="col_pair"></th>
+        <th scope="col" data-i18n="col_price"></th>
+        <th scope="col" data-i18n="col_chg"></th>
+        <th scope="col" data-i18n="col_high"></th>
+        <th scope="col" data-i18n="col_low"></th>
+        <th scope="col" data-i18n="col_vol"></th>
+      </tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+  <div class="scr-foot">
+    <span data-i18n="scr_source"></span>
+    <span><button type="button" class="linkbtn" id="retry" hidden data-i18n="scr_retry"></button> <a href="https://www.binance.com/vi/markets/overview" target="_blank" rel="noopener" data-i18n="scr_more"></a></span>
+  </div>
+</section>
+
+<section id="tinh-nang" class="band">
+  <div class="wrap sec">
+    <div class="sec-head">
+      <span class="eyebrow" data-i18n="feat_eyebrow"></span>
+      <h2 class="h2" data-i18n="feat_h2"></h2>
+      <p class="lead" data-i18n="feat_p"></p>
+    </div>
+    <div class="feats">
+      <button type="button" class="feat" data-feat="f1">
+        <span class="feat-art"><svg width="200" height="90" viewBox="0 0 200 90" aria-hidden="true">
+          <rect class="bar" x="20" y="40" width="14" height="40" rx="3" fill="#2a3142"/>
+          <rect class="bar" x="44" y="25" width="14" height="55" rx="3" fill="#2a3142" style="animation-delay:.3s"/>
+          <rect class="bar" x="68" y="50" width="14" height="30" rx="3" fill="#2a3142" style="animation-delay:.6s"/>
+          <rect class="bar" x="92" y="18" width="14" height="62" rx="3" fill="#3ee6b4" style="animation-delay:.9s"/>
+          <rect class="bar" x="116" y="34" width="14" height="46" rx="3" fill="#2a3142" style="animation-delay:1.2s"/>
+          <rect class="bar" x="140" y="44" width="14" height="36" rx="3" fill="#2a3142" style="animation-delay:1.5s"/>
+          <rect class="bar" x="164" y="28" width="14" height="52" rx="3" fill="#2a3142" style="animation-delay:1.8s"/>
+          <rect class="scan" x="12" y="8" width="3" height="76" rx="1.5" fill="#3ee6b4" opacity=".8"/>
+        </svg></span>
+        <span class="feat-t" data-i18n="f1_t"></span>
+        <span class="feat-s" data-i18n="f1_s"></span>
+        <span class="feat-more"><span data-i18n="feat_more"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <button type="button" class="feat" data-feat="f2">
+        <span class="feat-art"><svg width="200" height="90" viewBox="0 0 200 90" aria-hidden="true">
+          <path d="M18 14h44l-16 22v22l-12 8V36z" fill="none" stroke="#3ee6b4" stroke-width="2.5" stroke-linejoin="round"/>
+          <rect class="frow" x="80" y="14" width="104" height="14" rx="4" fill="#2a3142"/>
+          <rect class="frow" x="80" y="38" width="104" height="14" rx="4" fill="#2a3142"/>
+          <rect class="frow" x="80" y="62" width="104" height="14" rx="4" fill="#2a3142"/>
+        </svg></span>
+        <span class="feat-t" data-i18n="f2_t"></span>
+        <span class="feat-s" data-i18n="f2_s"></span>
+        <span class="feat-more"><span data-i18n="feat_more"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <button type="button" class="feat" data-feat="f3">
+        <span class="feat-art"><svg width="200" height="90" viewBox="0 0 200 90" aria-hidden="true">
+          <path d="M14 80H188M14 80V8" stroke="#2a3142" stroke-width="2"/>
+          <path d="M14 20H188M14 50H188" stroke="#1f2430" stroke-width="1" stroke-dasharray="4 4"/>
+          <polyline class="draw" points="16,70 40,58 60,64 84,40 104,48 128,26 150,34 184,14" fill="none" stroke="#3ee6b4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg></span>
+        <span class="feat-t" data-i18n="f3_t"></span>
+        <span class="feat-s" data-i18n="f3_s"></span>
+        <span class="feat-more"><span data-i18n="feat_more"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <button type="button" class="feat" data-feat="f4">
+        <span class="feat-art"><svg width="200" height="90" viewBox="0 0 200 90" aria-hidden="true">
+          <circle class="ant" cx="84" cy="10" r="4" fill="#3ee6b4"/>
+          <path d="M84 14v8" stroke="#3ee6b4" stroke-width="2.5"/>
+          <rect x="56" y="22" width="56" height="44" rx="12" fill="none" stroke="#3ee6b4" stroke-width="2.5"/>
+          <rect class="eye" x="70" y="36" width="8" height="10" rx="3" fill="#3ee6b4"/>
+          <rect class="eye" x="90" y="36" width="8" height="10" rx="3" fill="#3ee6b4"/>
+          <path d="M74 56h20" stroke="#3ee6b4" stroke-width="2.5" stroke-linecap="round"/>
+          <g class="gear"><circle cx="146" cy="48" r="14" fill="none" stroke="#2f3a50" stroke-width="6" stroke-dasharray="6 5"/><circle cx="146" cy="48" r="6" fill="none" stroke="#3ee6b4" stroke-width="2.5"/></g>
+        </svg></span>
+        <span class="feat-t" data-i18n="f4_t"></span>
+        <span class="feat-s" data-i18n="f4_s"></span>
+        <span class="feat-more"><span data-i18n="feat_more"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<dialog id="dlg" aria-labelledby="dlgT">
+  <div class="dlg">
+    <div class="dlg-top">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span class="eyebrow" data-i18n="feat_eyebrow"></span>
+        <h3 id="dlgT"></h3>
+      </div>
+      <button type="button" class="x" id="dlgX" data-i18n-aria="close"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <p id="dlgIntro" class="lead" style="font-size:17px"></p>
+    <ul id="dlgList"></ul>
+    <div class="row">
+      <a class="btn btn-primary ref" href="https://einstq.com/?invite=YAOoHGPpXFqHR28MNvDhqQ" target="_blank" rel="noopener" data-i18n="dlg_cta"></a>
+    </div>
+  </div>
+</dialog>
+
+<section id="an-toan" class="wrap sec">
+  <div class="split">
+    <div class="stack" style="gap:16px">
+      <span class="eyebrow" data-i18n="safe_eyebrow"></span>
+      <h2 class="h2" data-i18n="safe_h2"></h2>
+      <p class="lead" data-i18n="safe_p"></p>
+    </div>
+    <div class="stack">
+      <div class="item"><span class="k">A</span><div><h3 data-i18n="sa_t"></h3><p data-i18n="sa_p"></p></div></div>
+      <div class="item"><span class="k">B</span><div><h3 data-i18n="sb_t"></h3><p data-i18n="sb_p"></p></div></div>
+      <div class="item"><span class="k">C</span><div><h3 data-i18n="sc_t"></h3><p data-i18n="sc_p"></p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap sec">
+    <div class="sec-head">
+      <span class="eyebrow" data-i18n="how_eyebrow"></span>
+      <h2 class="h2" data-i18n="how_h2"></h2>
+    </div>
+    <div class="grid3">
+      <div class="step"><span class="n">01</span><h3 data-i18n="h1_t"></h3><p data-i18n="h1_p"></p></div>
+      <div class="step"><span class="n">02</span><h3 data-i18n="h2_t"></h3><p data-i18n="h2_p"></p></div>
+      <div class="step"><span class="n">03</span><h3 data-i18n="h3_t"></h3><p data-i18n="h3_p"></p></div>
+    </div>
+    <div class="row" style="margin-top:40px;align-items:center;gap:16px">
+      <a class="btn btn-primary btn-lg ref" href="https://einstq.com/?invite=YAOoHGPpXFqHR28MNvDhqQ" target="_blank" rel="noopener" data-i18n="how_cta"></a>
+      <span style="color:var(--dim);font-size:15px" data-i18n="how_note"></span>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="sec-head">
+    <span class="eyebrow" data-i18n="mk_eyebrow"></span>
+    <h2 class="h2" data-i18n="mk_h2"></h2>
+  </div>
+  <div class="grid3">
+    <div class="mk"><span class="tk">BTC · ETH · Altcoin</span><h3>Crypto</h3><p data-i18n="mk1_p"></p></div>
+    <div class="mk"><span class="tk">NASDAQ · NYSE</span><h3 data-i18n="mk2_t"></h3><p data-i18n="mk2_p"></p></div>
+    <div class="mk"><span class="tk">FX · XAU · Index</span><h3>Forex / CFD</h3><p data-i18n="mk3_p"></p></div>
+  </div>
+</section>
+
+<section id="bang-gia" class="band">
+  <div class="wrap sec">
+    <div class="sec-head">
+      <span class="eyebrow" data-i18n="pr_eyebrow"></span>
+      <h2 class="h2" data-i18n="pr_h2"></h2>
+    </div>
+    <div class="prices">
+      <div class="plan"><h3>Free</h3><div class="amt"><b>$0</b><span data-i18n="per_month"></span></div><p data-i18n="pr_free"></p><a class="btn btn-ghost ref" href="https://einstq.com/?invite=YAOoHGPpXFqHR28MNvDhqQ" target="_blank" rel="noopener" data-i18n="pr_free_btn"></a></div>
+      <div class="plan"><h3>Basic</h3><div class="amt"><b>$19.9</b><span data-i18n="per_month"></span></div><p data-i18n="pr_basic"></p><a class="btn btn-ghost ref" href="https://einstq.com/?invite=YAOoHGPpXFqHR28MNvDhqQ" target="_blank" rel="noopener"><span data-i18n="pr_choose"></span>&nbsp;Basic</a></div>
+      <div class="plan hot"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>Pro</h3><span class="tag" data-i18n="pr_popular"></span></div><div class="amt"><b>$49.9</b><span data-i18n="per_month"></span></div><p data-i18n="pr_pro"></p><a class="btn btn-primary ref" href="https://einstq.com/?invite=YAOoHGPpXFqHR28MNvDhqQ" target="_blank" rel="noopener"><span data-i18n="pr_choose"></span>&nbsp;Pro</a></div>
+      <div class="plan"><h3>Premium</h3><div class="amt"><b>$99.9</b><span data-i18n="per_month"></span></div><p data-i18n="pr_prem"></p><a class="btn btn-ghost ref" href="https://einstq.com/?invite=YAOoHGPpXFqHR28MNvDhqQ" target="_blank" rel="noopener"><span data-i18n="pr_choose"></span>&nbsp;Premium</a></div>
+    </div>
+    <p class="note" style="margin-top:16px;font-size:14px" data-i18n="pr_note"></p>
+  </div>
+</section>
+
+<section id="hoi-dap" class="wrap sec">
+  <div class="sec-head">
+    <span class="eyebrow" data-i18n="faq_eyebrow"></span>
+    <h2 class="h2" data-i18n="faq_h2"></h2>
+  </div>
+  <div class="faq">
+    <div class="qa"><h3 data-i18n="q1"></h3><p data-i18n="a1"></p></div>
+    <div class="qa"><h3 data-i18n="q2"></h3><p data-i18n="a2"></p></div>
+    <div class="qa"><h3 data-i18n="q3"></h3><p data-i18n="a3"></p></div>
+    <div class="qa"><h3 data-i18n="q4"></h3><p data-i18n="a4"></p></div>
+    <div class="qa"><h3 data-i18n="q5"></h3><p data-i18n="a5"></p></div>
+  </div>
+</section>
+
+<section class="wrap" style="padding-block:0 88px">
+  <div class="cta-box">
+    <div>
+      <h2 class="h2" data-i18n="end_h2"></h2>
+      <p class="lead" data-i18n="end_p"></p>
+      <div class="code"><span data-i18n="end_code"></span> <output id="code">YAOoHGPpXFqHR28MNvDhqQ</output><button type="button" class="copy" id="copyBtn" data-i18n="copy"></button></div>
+    </div>
+    <a class="btn btn-primary btn-lg ref" href="https://einstq.com/?invite=YAOoHGPpXFqHR28MNvDhqQ" target="_blank" rel="noopener"><span data-i18n="end_btn"></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div class="foot-top"><span>EINSTEIN QUANT</span><a href="https://einstq.com/?invite=YAOoHGPpXFqHR28MNvDhqQ" target="_blank" rel="noopener" style="color:var(--muted)">einstq.com</a></div>
+    <p data-i18n="risk"></p>
+    <p class="legal" id="legal"></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+var REG='81427491-000-10-26-5', ADDR='RM 10D R1, 10/F, KIN GA IND BUILDING, 9 SAN ON STREET, TUEN MUN, HONG KONG';
+var T={
+vi:{
+nav_screener:'Bảng giá',nav_features:'Tính năng',nav_safety:'An toàn vốn',nav_pricing:'Gói dịch vụ',nav_faq:'Hỏi đáp',cta_nav:'Đăng ký miễn phí',
+hero_tag:'AI · Screener · Chiến lược · Bot giao dịch',hero_h1:'Giao dịch bằng dữ liệu,<br>không phải cảm tính.',
+hero_p:'Einstein Quant gom phân tích tài sản bằng AI, bộ lọc thị trường, thư viện chiến lược và bot giao dịch vào một nền tảng duy nhất. Tiền của bạn vẫn nằm trong tài khoản giao dịch của chính bạn.',
+hero_cta:'Tạo tài khoản miễn phí',hero_cta2:'Xem bảng giá trực tiếp',hero_c1:'Mô hình non-custody',hero_c2:'Có gói miễn phí',hero_c3:'Nhiều thị trường',
+bot_title:'Bot: Grid BTC/USDT',bot_status:'Đang chạy',bot_buys:'Lệnh mua',bot_sells:'Lệnh bán',bot_grid:'Mức lưới',bot_note:'Mô phỏng minh họa cách bot lưới mua ở vùng giá thấp và bán ở vùng giá cao. Không phải kết quả giao dịch thực tế.',bot_aria:'Mô phỏng bot giao dịch lưới',
+trust1:'Không giữ tiền của người dùng',trust2:'Kết nối với tài khoản giao dịch của bạn',trust3:'EINSTQ LIMITED · Hồng Kông',
+scr_eyebrow:'Bộ lọc thị trường',scr_h2:'Giá crypto trực tiếp từ Binance.',scr_p:'Dữ liệu cập nhật theo thời gian thực từ API thị trường công khai của Binance. Chọn bộ lọc để xem tài sản tăng mạnh, giảm mạnh hoặc giao dịch sôi động nhất trong 24 giờ.',
+scr_tab_hot:'Phổ biến',scr_tab_gain:'Tăng mạnh',scr_tab_lose:'Giảm mạnh',scr_tab_vol:'Khối lượng lớn',
+col_pair:'Cặp',col_price:'Giá',col_chg:'24h %',col_high:'Cao 24h',col_low:'Thấp 24h',col_vol:'KL 24h (USDT)',
+st_connecting:'Đang kết nối Binance…',st_live:'Trực tiếp',st_poll:'Cập nhật mỗi 5 giây',st_off:'Chưa kết nối được dữ liệu Binance',
+scr_source:'Nguồn: Binance Market Data API · Chỉ mang tính tham khảo',scr_retry:'Thử kết nối lại',scr_more:'Xem toàn bộ thị trường trên Binance',
+feat_eyebrow:'Tính năng',feat_h2:'Bốn công cụ của nhà giao dịch định lượng, trong một màn hình.',feat_p:'Nhấn vào từng tính năng để xem chi tiết.',feat_more:'Xem chi tiết',
+f1_t:'AI phân tích tài sản',f1_s:'AI tổng hợp xu hướng, biến động và bối cảnh thị trường thành một bản đánh giá dễ đọc.',
+f1_i:'Thay vì tự đọc hàng chục chỉ báo, bạn chọn một tài sản và nhận bản phân tích ngắn gọn do AI tổng hợp.',
+f1_l:['<b>Xu hướng giá:</b> tài sản đang tăng, giảm hay đi ngang, ở khung thời gian nào.','<b>Mức biến động:</b> giá đang dao động mạnh hay ổn định, để bạn chọn chiến lược phù hợp.','<b>Bối cảnh thị trường:</b> đặt tài sản trong bức tranh chung của thị trường.','<b>Giải thích dễ hiểu:</b> viết bằng ngôn ngữ thường ngày, không cần biết lập trình hay thuật ngữ phức tạp.'],
+f2_t:'Bộ lọc thị trường',f2_s:'Quét nhanh hàng loạt tài sản theo tiêu chí bạn đặt để thấy cơ hội sớm hơn.',
+f2_i:'Bộ lọc giúp bạn thu hẹp hàng trăm tài sản xuống vài cái đáng chú ý nhất.',
+f2_l:['<b>Lọc theo biến động:</b> tìm tài sản tăng hoặc giảm mạnh trong 24 giờ.','<b>Lọc theo khối lượng:</b> thấy ngay nơi dòng tiền đang đổ vào.','<b>Nhiều thị trường:</b> cùng một cách lọc cho crypto, cổ phiếu Mỹ và Forex/CFD.','<b>Dùng thử ngay:</b> bảng giá trực tiếp phía trên trang này là một phiên bản thu gọn của bộ lọc.'],
+f3_t:'Chiến lược giao dịch',f3_s:'Thư viện chiến lược sẵn có, chọn theo khẩu vị rủi ro thay vì tự viết từng quy tắc.',
+f3_i:'Mỗi chiến lược là một bộ quy tắc rõ ràng: khi nào vào lệnh, khi nào thoát lệnh.',
+f3_l:['<b>Chọn theo khẩu vị rủi ro:</b> từ thận trọng đến chủ động.','<b>Hiểu logic trước khi dùng:</b> mỗi chiến lược có mô tả cách hoạt động.','<b>Kết hợp với AI:</b> dùng phân tích AI để chọn chiến lược hợp với trạng thái thị trường.','<b>Nền tảng cho bot:</b> chiến lược bạn chọn là thứ bot sẽ thực thi.'],
+f4_t:'Bot giao dịch',f4_s:'Bot thực thi chiến lược đều đặn, đúng kỷ luật, kể cả khi bạn đang ngủ.',
+f4_i:'Bot đặt lệnh trên tài khoản giao dịch của bạn theo đúng chiến lược đã chọn, không bị cảm xúc chi phối.',
+f4_l:['<b>Chạy liên tục:</b> phù hợp thị trường crypto mở cửa 24/7.','<b>Bạn đặt giới hạn:</b> chọn số vốn và cặp giao dịch cho từng bot.','<b>Dừng bất cứ lúc nào:</b> tắt bot hoặc ngắt kết nối ngay tại tài khoản giao dịch.','<b>Theo dõi tập trung:</b> xem trạng thái các bot trên một bảng điều khiển.'],
+dlg_cta:'Dùng thử miễn phí',close:'Đóng',
+safe_eyebrow:'An toàn vốn',safe_h2:'Tiền của bạn. Tài khoản của bạn. Quyền kiểm soát của bạn.',safe_p:'Einstein Quant hoạt động theo mô hình non-custody: nền tảng không nhận tiền nạp và không giữ tài sản của bạn. Mọi khoản vốn nằm yên trong tài khoản giao dịch bạn đã mở.',
+sa_t:'Không nạp tiền vào nền tảng',sa_p:'Bạn giữ tiền ở tài khoản giao dịch của mình. Einstein Quant chỉ cung cấp công cụ phân tích và thực thi.',
+sb_t:'Bạn quyết định mức quyền',sb_p:'Khi tạo khóa kết nối ở tài khoản giao dịch, chỉ bật quyền giao dịch và luôn tắt quyền rút tiền.',
+sc_t:'Ngắt kết nối bất cứ lúc nào',sc_p:'Xóa khóa kết nối ngay tại tài khoản giao dịch là bot dừng truy cập.',
+how_eyebrow:'Cách hoạt động',how_h2:'Bắt đầu trong ba bước.',h1_t:'Đăng ký qua link mời',h1_p:'Tạo tài khoản Einstein Quant miễn phí bằng link mời trên trang này. Chỉ mất vài phút.',h2_t:'Kết nối tài khoản giao dịch',h2_p:'Liên kết tài khoản giao dịch bạn đang dùng. Vốn vẫn ở nguyên chỗ cũ.',h3_t:'Phân tích, chọn chiến lược, chạy bot',h3_p:'Dùng AI và bộ lọc để tìm cơ hội, chọn chiến lược phù hợp rồi để bot thực thi.',how_cta:'Bắt đầu bước 1',how_note:'Miễn phí khi đăng ký, nâng cấp khi bạn cần.',
+mk_eyebrow:'Thị trường',mk_h2:'Một nền tảng cho nhiều thị trường.',mk1_p:'Thị trường mở 24/7, nơi bot phát huy rõ nhất lợi thế không ngủ.',mk2_t:'Cổ phiếu Mỹ',mk2_p:'Lọc và phân tích cổ phiếu Mỹ bằng cùng một bộ công cụ.',mk3_p:'Áp dụng chiến lược định lượng cho tiền tệ, vàng và chỉ số.',
+pr_eyebrow:'Gói dịch vụ',pr_h2:'Bắt đầu miễn phí. Nâng cấp khi đã sẵn sàng.',per_month:'/tháng',pr_free:'Làm quen với nền tảng và khám phá các công cụ.',pr_basic:'Cho người mới bắt đầu giao dịch có hệ thống.',pr_pro:'Cho nhà giao dịch chủ động, dùng bot thường xuyên.',pr_prem:'Đầy đủ công cụ cho người giao dịch chuyên sâu.',pr_free_btn:'Đăng ký miễn phí',pr_choose:'Chọn',pr_popular:'Phổ biến',pr_note:'Quyền lợi chi tiết của từng gói được cập nhật trên einstq.com.',
+faq_eyebrow:'Hỏi đáp',faq_h2:'Câu hỏi thường gặp',
+q1:'Einstein Quant có giữ tiền của tôi không?',a1:'Không. Nền tảng hoạt động theo mô hình non-custody, vốn của bạn luôn nằm trong tài khoản giao dịch của chính bạn.',
+q2:'Tôi chưa từng dùng bot, có dùng được không?',a2:'Được. Bạn có thể bắt đầu với gói miễn phí, dùng AI phân tích và bộ lọc để làm quen trước, rồi mới bật bot khi đã hiểu chiến lược.',
+q3:'Bot có đảm bảo lợi nhuận không?',a3:'Không có công cụ nào đảm bảo lợi nhuận. Bot giúp bạn giao dịch kỷ luật và nhất quán; kết quả vẫn phụ thuộc vào thị trường và cách bạn quản lý rủi ro.',
+q4:'Dữ liệu bảng giá trên trang lấy từ đâu?',a4:'Bảng giá lấy dữ liệu trực tiếp từ API thị trường công khai của Binance và chỉ mang tính tham khảo.',
+q5:'Đơn vị nào vận hành Einstein Quant?',a5:'EINSTQ LIMITED, doanh nghiệp đăng ký tại Hồng Kông, số đăng ký kinh doanh '+REG+'.',
+end_h2:'Để AI làm phần nặng nhọc. Bạn giữ quyền quyết định.',end_p:'Đăng ký bằng link mời để tham gia Einstein Quant.',end_code:'Mã mời:',end_btn:'Đăng ký Einstein Quant',copy:'Sao chép',copied:'Đã sao chép',
+risk:'Cảnh báo rủi ro: Giao dịch crypto, cổ phiếu, Forex và CFD có rủi ro cao và có thể dẫn đến mất một phần hoặc toàn bộ vốn. Nội dung trên trang chỉ nhằm giới thiệu sản phẩm, không phải lời khuyên đầu tư. Hiệu suất quá khứ và dữ liệu minh họa không đảm bảo kết quả tương lai.',
+reg_label:'Số đăng ký kinh doanh'
+},
+en:{
+nav_screener:'Live prices',nav_features:'Features',nav_safety:'Fund safety',nav_pricing:'Plans',nav_faq:'FAQ',cta_nav:'Sign up free',
+hero_tag:'AI · Screener · Strategies · Trading bots',hero_h1:'Trade on data,<br>not on gut feeling.',
+hero_p:'Einstein Quant brings AI asset analysis, a market screener, a strategy library and trading bots into one platform. Your funds stay in your own trading account.',
+hero_cta:'Create a free account',hero_cta2:'See live prices',hero_c1:'Non-custodial',hero_c2:'Free plan available',hero_c3:'Multiple markets',
+bot_title:'Bot: Grid BTC/USDT',bot_status:'Running',bot_buys:'Buys',bot_sells:'Sells',bot_grid:'Grid levels',bot_note:'A simulation of how a grid bot buys in lower price zones and sells in higher ones. Not real trading results.',bot_aria:'Grid trading bot simulation',
+trust1:'We never hold user funds',trust2:'Connects to your own trading account',trust3:'EINSTQ LIMITED · Hong Kong',
+scr_eyebrow:'Market screener',scr_h2:'Live crypto prices from Binance.',scr_p:'Real-time data from Binance\'s public market API. Switch filters to see the top gainers, top losers or most traded assets over 24 hours.',
+scr_tab_hot:'Popular',scr_tab_gain:'Top gainers',scr_tab_lose:'Top losers',scr_tab_vol:'Top volume',
+col_pair:'Pair',col_price:'Price',col_chg:'24h %',col_high:'24h high',col_low:'24h low',col_vol:'24h vol (USDT)',
+st_connecting:'Connecting to Binance…',st_live:'Live',st_poll:'Updating every 5 seconds',st_off:'Could not reach Binance data',
+scr_source:'Source: Binance Market Data API · For reference only',scr_retry:'Try again',scr_more:'See all markets on Binance',
+feat_eyebrow:'Features',feat_h2:'A quant trader\'s four tools, on one screen.',feat_p:'Tap any feature to see the details.',feat_more:'See details',
+f1_t:'AI asset analysis',f1_s:'AI turns trend, volatility and market context into a short, readable assessment.',
+f1_i:'Instead of reading dozens of indicators yourself, pick an asset and get a concise analysis written by AI.',
+f1_l:['<b>Price trend:</b> whether the asset is rising, falling or moving sideways, and on which timeframe.','<b>Volatility:</b> how sharply the price is moving, so you can choose a fitting strategy.','<b>Market context:</b> how the asset sits within the wider market.','<b>Plain language:</b> no coding or jargon required.'],
+f2_t:'Market screener',f2_s:'Scan many assets at once against your criteria and spot opportunities earlier.',
+f2_i:'The screener narrows hundreds of assets down to the few worth your attention.',
+f2_l:['<b>Filter by movement:</b> find the biggest 24-hour gainers and losers.','<b>Filter by volume:</b> see where money is flowing.','<b>Multiple markets:</b> the same filters for crypto, US stocks and Forex/CFD.','<b>Try it now:</b> the live price table on this page is a compact version of the screener.'],
+f3_t:'Trading strategies',f3_s:'A ready-made strategy library, chosen by risk appetite instead of written rule by rule.',
+f3_i:'Each strategy is a clear set of rules for when to enter and when to exit.',
+f3_l:['<b>Pick by risk appetite:</b> from conservative to active.','<b>Understand before you use:</b> every strategy explains how it works.','<b>Pair with AI:</b> use AI analysis to match a strategy to current market conditions.','<b>The base for bots:</b> the strategy you choose is what your bot executes.'],
+f4_t:'Trading bots',f4_s:'Bots execute your strategy consistently and with discipline, even while you sleep.',
+f4_i:'A bot places orders in your own trading account, exactly as your chosen strategy says, free of emotion.',
+f4_l:['<b>Always on:</b> made for crypto markets that never close.','<b>You set the limits:</b> choose the capital and pairs for each bot.','<b>Stop anytime:</b> turn a bot off or disconnect it from your trading account.','<b>One dashboard:</b> track every bot\'s status in one place.'],
+dlg_cta:'Try it free',close:'Close',
+safe_eyebrow:'Fund safety',safe_h2:'Your money. Your account. Your control.',safe_p:'Einstein Quant is non-custodial: the platform takes no deposits and never holds your assets. Your capital stays in the trading account you opened.',
+sa_t:'No deposits to the platform',sa_p:'Your funds stay in your own trading account. Einstein Quant provides the analysis and execution tools.',
+sb_t:'You set the permissions',sb_p:'When you create a connection key in your trading account, enable trading only and always keep withdrawals off.',
+sc_t:'Disconnect anytime',sc_p:'Delete the connection key in your trading account and the bot loses access immediately.',
+how_eyebrow:'How it works',how_h2:'Get started in three steps.',h1_t:'Sign up with the invite link',h1_p:'Create a free Einstein Quant account with the invite link on this page. It takes a few minutes.',h2_t:'Connect your trading account',h2_p:'Link the trading account you already use. Your funds stay where they are.',h3_t:'Analyse, pick a strategy, run a bot',h3_p:'Use AI and the screener to find opportunities, choose a strategy, and let the bot execute.',how_cta:'Start step 1',how_note:'Free to sign up. Upgrade when you need to.',
+mk_eyebrow:'Markets',mk_h2:'One platform, many markets.',mk1_p:'Open 24/7, where a bot that never sleeps matters most.',mk2_t:'US stocks',mk2_p:'Screen and analyse US stocks with the same toolkit.',mk3_p:'Apply quant strategies to currencies, gold and indices.',
+pr_eyebrow:'Plans',pr_h2:'Start free. Upgrade when you are ready.',per_month:'/month',pr_free:'Get to know the platform and explore the tools.',pr_basic:'For those starting to trade systematically.',pr_pro:'For active traders who run bots regularly.',pr_prem:'The full toolkit for in-depth traders.',pr_free_btn:'Sign up free',pr_choose:'Choose',pr_popular:'Popular',pr_note:'Full plan benefits are listed on einstq.com.',
+faq_eyebrow:'FAQ',faq_h2:'Frequently asked questions',
+q1:'Does Einstein Quant hold my money?',a1:'No. The platform is non-custodial; your capital always stays in your own trading account.',
+q2:'I have never used a bot. Can I still use it?',a2:'Yes. Start on the free plan, get familiar with the AI analysis and screener, and switch on a bot once you understand the strategy.',
+q3:'Do bots guarantee profit?',a3:'No tool guarantees profit. Bots help you trade with discipline and consistency; results still depend on the market and your risk management.',
+q4:'Where does the price table get its data?',a4:'The table streams data from Binance\'s public market API and is for reference only.',
+q5:'Who operates Einstein Quant?',a5:'EINSTQ LIMITED, a company registered in Hong Kong, business registration number '+REG+'.',
+end_h2:'Let AI do the heavy lifting. You keep the final say.',end_p:'Sign up with the invite link to join Einstein Quant.',end_code:'Invite code:',end_btn:'Join Einstein Quant',copy:'Copy',copied:'Copied',
+risk:'Risk warning: Trading crypto, stocks, Forex and CFDs carries high risk and can result in the loss of part or all of your capital. This page introduces a product and is not investment advice. Past performance and illustrative data do not guarantee future results.',
+reg_label:'Business Registration No.'
+},
+zh:{
+nav_screener:'实时行情',nav_features:'功能',nav_safety:'资金安全',nav_pricing:'套餐',nav_faq:'常见问题',cta_nav:'免费注册',
+hero_tag:'AI · 筛选器 · 策略 · 交易机器人',hero_h1:'用数据交易，<br>而不是凭感觉。',
+hero_p:'Einstein Quant 将 AI 资产分析、市场筛选器、策略库和交易机器人整合在一个平台。您的资金始终留在您自己的交易账户中。',
+hero_cta:'免费创建账户',hero_cta2:'查看实时行情',hero_c1:'非托管模式',hero_c2:'提供免费套餐',hero_c3:'覆盖多个市场',
+bot_title:'机器人：网格 BTC/USDT',bot_status:'运行中',bot_buys:'买入',bot_sells:'卖出',bot_grid:'网格层数',bot_note:'模拟演示网格机器人如何在低价区买入、高价区卖出，并非真实交易结果。',bot_aria:'网格交易机器人模拟',
+trust1:'从不托管用户资金',trust2:'连接您自己的交易账户',trust3:'EINSTQ LIMITED · 香港',
+scr_eyebrow:'市场筛选器',scr_h2:'来自币安的实时加密货币行情。',scr_p:'数据实时来自币安公开市场 API。切换筛选条件，查看 24 小时涨幅榜、跌幅榜或成交最活跃的资产。',
+scr_tab_hot:'热门',scr_tab_gain:'涨幅榜',scr_tab_lose:'跌幅榜',scr_tab_vol:'成交量榜',
+col_pair:'交易对',col_price:'价格',col_chg:'24h 涨跌',col_high:'24h 最高',col_low:'24h 最低',col_vol:'24h 成交额 (USDT)',
+st_connecting:'正在连接币安…',st_live:'实时',st_poll:'每 5 秒更新',st_off:'暂时无法获取币安数据',
+scr_source:'数据来源：币安市场数据 API · 仅供参考',scr_retry:'重新连接',scr_more:'在币安查看全部市场',
+feat_eyebrow:'功能',feat_h2:'量化交易者的四件工具，一屏掌握。',feat_p:'点击任一功能查看详情。',feat_more:'查看详情',
+f1_t:'AI 资产分析',f1_s:'AI 将趋势、波动和市场背景整理成简明易读的评估。',
+f1_i:'无需亲自研读数十个指标，选择一个资产，即可获得 AI 生成的简明分析。',
+f1_l:['<b>价格趋势：</b>资产处于上涨、下跌还是横盘，以及对应的时间周期。','<b>波动程度：</b>价格波动剧烈还是平稳，帮助您选择合适的策略。','<b>市场背景：</b>把资产放在整体市场中来看。','<b>通俗易懂：</b>无需编程或专业术语。'],
+f2_t:'市场筛选器',f2_s:'按您设定的条件批量扫描资产，更早发现机会。',
+f2_i:'筛选器帮您把数百个资产缩小到最值得关注的几个。',
+f2_l:['<b>按涨跌筛选：</b>找出 24 小时涨跌幅最大的资产。','<b>按成交量筛选：</b>看清资金流向。','<b>多个市场：</b>加密货币、美股和外汇/CFD 使用同一套筛选方式。','<b>立即体验：</b>本页的实时行情表就是筛选器的精简版。'],
+f3_t:'交易策略',f3_s:'现成的策略库，按风险偏好选择，无需逐条编写规则。',
+f3_i:'每个策略都是一套清晰的规则：何时入场、何时离场。',
+f3_l:['<b>按风险偏好选择：</b>从稳健到积极。','<b>先理解再使用：</b>每个策略都附有运作说明。','<b>结合 AI：</b>用 AI 分析匹配当前市场状态的策略。','<b>机器人的基础：</b>您选择的策略就是机器人执行的内容。'],
+f4_t:'交易机器人',f4_s:'机器人严格、持续地执行您的策略，即使您在休息。',
+f4_i:'机器人按照您选定的策略在您自己的交易账户中下单，不受情绪影响。',
+f4_l:['<b>全天候运行：</b>适合 24/7 不休市的加密市场。','<b>由您设定上限：</b>为每个机器人选择资金和交易对。','<b>随时停止：</b>关闭机器人或在交易账户中断开连接。','<b>集中监控：</b>在一个面板上查看所有机器人状态。'],
+dlg_cta:'免费试用',close:'关闭',
+safe_eyebrow:'资金安全',safe_h2:'您的资金。您的账户。由您掌控。',safe_p:'Einstein Quant 采用非托管模式：平台不接收充值，也不持有您的资产。所有资金都留在您开设的交易账户中。',
+sa_t:'无需向平台充值',sa_p:'资金留在您自己的交易账户中，Einstein Quant 仅提供分析和执行工具。',
+sb_t:'权限由您决定',sb_p:'在交易账户创建连接密钥时，只开启交易权限，并始终关闭提现权限。',
+sc_t:'随时断开连接',sc_p:'在交易账户中删除连接密钥，机器人即刻失去访问权限。',
+how_eyebrow:'使用流程',how_h2:'三步即可开始。',h1_t:'通过邀请链接注册',h1_p:'使用本页的邀请链接免费创建 Einstein Quant 账户，只需几分钟。',h2_t:'连接交易账户',h2_p:'绑定您正在使用的交易账户，资金原地不动。',h3_t:'分析、选策略、运行机器人',h3_p:'借助 AI 和筛选器发现机会，选择合适的策略，交给机器人执行。',how_cta:'开始第 1 步',how_note:'免费注册，按需升级。',
+mk_eyebrow:'市场',mk_h2:'一个平台，多个市场。',mk1_p:'24/7 开放的市场，最能发挥机器人不眠不休的优势。',mk2_t:'美股',mk2_p:'用同一套工具筛选和分析美股。',mk3_p:'将量化策略应用于外汇、黄金和指数。',
+pr_eyebrow:'套餐',pr_h2:'免费开始，准备好再升级。',per_month:'/月',pr_free:'熟悉平台，探索各项工具。',pr_basic:'适合刚开始系统化交易的用户。',pr_pro:'适合经常使用机器人的活跃交易者。',pr_prem:'为深度交易者提供完整工具。',pr_free_btn:'免费注册',pr_choose:'选择',pr_popular:'热门',pr_note:'各套餐的详细权益以 einstq.com 为准。',
+faq_eyebrow:'常见问题',faq_h2:'常见问题',
+q1:'Einstein Quant 会托管我的资金吗？',a1:'不会。平台采用非托管模式，您的资金始终在您自己的交易账户中。',
+q2:'我从没用过机器人，也能使用吗？',a2:'可以。先从免费套餐开始，熟悉 AI 分析和筛选器，理解策略后再启动机器人。',
+q3:'机器人能保证盈利吗？',a3:'没有任何工具能保证盈利。机器人帮助您纪律化、一致地交易，结果仍取决于市场和您的风险管理。',
+q4:'行情表的数据来自哪里？',a4:'行情表实时获取币安公开市场 API 的数据，仅供参考。',
+q5:'Einstein Quant 由谁运营？',a5:'EINSTQ LIMITED，香港注册公司，商业登记号码 '+REG+'。',
+end_h2:'繁重的工作交给 AI，决定权在您手中。',end_p:'通过邀请链接注册，加入 Einstein Quant。',end_code:'邀请码：',end_btn:'加入 Einstein Quant',copy:'复制',copied:'已复制',
+risk:'风险提示：交易加密货币、股票、外汇和差价合约具有高风险，可能导致部分或全部本金损失。本页仅为产品介绍，不构成投资建议。过往表现及演示数据不代表未来结果。',
+reg_label:'商业登记号码'
+}};
+var LOCALE={vi:'vi-VN',en:'en-US',zh:'zh-CN'};
+var lang='vi';
+try{var s=localStorage.getItem('eq_lang');if(s&&T[s])lang=s;}catch(e){}
+
+var curFeat=null;
+function t(k){return T[lang][k];}
+function apply(){
+  document.documentElement.lang=lang==='zh'?'zh-CN':lang;
+  document.querySelectorAll('[data-i18n]').forEach(function(el){el.innerHTML=t(el.getAttribute('data-i18n'));});
+  document.querySelectorAll('[data-i18n-aria]').forEach(function(el){el.setAttribute('aria-label',t(el.getAttribute('data-i18n-aria')));});
+  document.querySelectorAll('.lang button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.lang===lang));});
+  document.getElementById('legal').textContent='© 2026 EINSTQ LIMITED · '+t('reg_label')+' '+REG+' · '+ADDR;
+  if(curFeat)fillDlg(curFeat);
+  setStatus(statusKey);
+  render(true);
+}
+document.querySelectorAll('.lang button').forEach(function(b){b.addEventListener('click',function(){lang=b.dataset.lang;try{localStorage.setItem('eq_lang',lang);}catch(e){}apply();});});
+
+/* feature dialog */
+var dlg=document.getElementById('dlg');
+function fillDlg(f){
+  document.getElementById('dlgT').textContent=t(f+'_t');
+  document.getElementById('dlgIntro').textContent=t(f+'_i');
+  document.getElementById('dlgList').innerHTML=t(f+'_l').map(function(x){return '<li>'+x+'</li>';}).join('');
+}
+document.querySelectorAll('.feat').forEach(function(b){b.addEventListener('click',function(){curFeat=b.dataset.feat;fillDlg(curFeat);if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');});});
+document.getElementById('dlgX').addEventListener('click',function(){dlg.close();});
+dlg.addEventListener('click',function(e){if(e.target===dlg)dlg.close();});
+dlg.addEventListener('close',function(){curFeat=null;});
+
+/* copy invite code */
+var cb=document.getElementById('copyBtn');
+cb.addEventListener('click',function(){
+  var code='YAOoHGPpXFqHR28MNvDhqQ';
+  var done=function(){cb.textContent=t('copied');setTimeout(function(){cb.textContent=t('copy');},1800);};
+  var sel=function(){var r=document.createRange();r.selectNodeContents(document.getElementById('code'));var s=getSelection();s.removeAllRanges();s.addRange(r);};
+  try{navigator.clipboard.writeText(code).then(done,sel);}catch(e){sel();}
+});
+
+/* ---------- live Binance screener ---------- */
+var SYMS=['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','DOGEUSDT','ADAUSDT','TRXUSDT','LINKUSDT','AVAXUSDT'];
+var data={}, sortMode='hot', statusKey='st_connecting', ws=null, pollTimer=null, gotData=false, giveUpTimer=null;
+var tb=document.getElementById('tb'), rows={};
+SYMS.forEach(function(s){
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td><span class="pair">'+s.replace('USDT','')+'</span> <span class="quote">/USDT</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>';
+  rows[s]=tr; tb.appendChild(tr);
+});
+function fmtPrice(v){
+  var d=v>=1000?2:v>=1?3:v>=0.01?5:7;
+  return v.toLocaleString(LOCALE[lang],{minimumFractionDigits:Math.min(d,2),maximumFractionDigits:d});
+}
+function fmtVol(v){try{return new Intl.NumberFormat(LOCALE[lang],{notation:'compact',maximumFractionDigits:2}).format(v);}catch(e){return Math.round(v).toLocaleString();}}
+var pending=false;
+function render(force){
+  if(pending&&!force)return; pending=true;
+  requestAnimationFrame(function(){
+    pending=false;
+    var order=SYMS.slice();
+    if(sortMode!=='hot'){
+      order.sort(function(a,b){
+        var A=data[a],B=data[b]; if(!A||!B)return (B?1:0)-(A?1:0);
+        if(sortMode==='gain')return B.P-A.P; if(sortMode==='lose')return A.P-B.P; return B.q-A.q;
+      });
+    }
+    order.forEach(function(s){
+      var tr=rows[s], d=data[s]; tb.appendChild(tr);
+      if(!d)return;
+      var c=tr.children;
+      var newPrice=fmtPrice(d.c);
+      if(c[1].textContent!==newPrice&&d.prev!=null&&d.c!==d.prev){
+        var cls=d.c>d.prev?'flash-up':'flash-dn'; c[1].classList.remove('flash-up','flash-dn'); void c[1].offsetWidth; c[1].classList.add(cls);
+        setTimeout(function(){c[1].classList.remove(cls);},700);
+      }
+      c[1].textContent=newPrice;
+      c[2].textContent=(d.P>0?'+':'')+d.P.toFixed(2)+'%'; c[2].className=d.P>=0?'up':'dn';
+      c[3].textContent=fmtPrice(d.h); c[4].textContent=fmtPrice(d.l); c[5].textContent=fmtVol(d.q);
+    });
+  });
+}
+function upd(s,c,P,h,l,q){
+  var o=data[s]||{}; data[s]={prev:o.c,c:+c,P:+P,h:+h,l:+l,q:+q};
+  if(!gotData){gotData=true;clearTimeout(giveUpTimer);}
+}
+var dot=document.getElementById('sDot'), st=document.getElementById('sText'), retry=document.getElementById('retry');
+function setStatus(k){statusKey=k;st.textContent=t(k);dot.className='dot'+(k==='st_live'||k==='st_poll'?' on':k==='st_off'?' off':'');retry.hidden=k!=='st_off';}
+
+var REST=['https://data-api.binance.vision/api/v3/ticker/24hr','https://api.binance.com/api/v3/ticker/24hr'];
+function fetchRest(i){
+  i=i||0; if(i>=REST.length)return Promise.reject();
+  var url=REST[i]+'?symbols='+encodeURIComponent(JSON.stringify(SYMS));
+  return fetch(url).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(arr){
+    arr.forEach(function(x){upd(x.symbol,x.lastPrice,x.priceChangePercent,x.highPrice,x.lowPrice,x.quoteVolume);}); render();
+  }).catch(function(){return fetchRest(i+1);});
+}
+function startPolling(){
+  if(pollTimer)return;
+  var tick=function(){fetchRest().then(function(){if(statusKey!=='st_live')setStatus('st_poll');},function(){if(!gotData)setStatus('st_off');});};
+  tick(); pollTimer=setInterval(tick,5000);
+}
+function connect(){
+  setStatus('st_connecting'); gotData=gotData||false;
+  fetchRest().then(function(){if(statusKey==='st_connecting')setStatus('st_poll');},function(){});
+  try{
+    var streams=SYMS.map(function(s){return s.toLowerCase()+'@ticker';}).join('/');
+    ws=new WebSocket('wss://data-stream.binance.vision/stream?streams='+streams);
+    ws.onmessage=function(ev){
+      try{var m=JSON.parse(ev.data).data; if(m&&m.s){upd(m.s,m.c,m.P,m.h,m.l,m.q); if(statusKey!=='st_live')setStatus('st_live'); if(pollTimer){clearInterval(pollTimer);pollTimer=null;} render();}}catch(e){}
+    };
+    ws.onerror=function(){startPolling();};
+    ws.onclose=function(){ws=null;startPolling();};
+  }catch(e){startPolling();}
+  clearTimeout(giveUpTimer);
+  giveUpTimer=setTimeout(function(){if(!gotData){setStatus('st_off');}},9000);
+}
+retry.addEventListener('click',function(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}if(ws){try{ws.close();}catch(e){}}connect();});
+document.querySelectorAll('.tabs button').forEach(function(b){b.addEventListener('click',function(){
+  sortMode=b.dataset.sort;
+  document.querySelectorAll('.tabs button').forEach(function(x){x.setAttribute('aria-selected',String(x===b));});
+  render(true);
+});});
+
+/* ---------- animated grid-bot simulation ---------- */
+var cv=document.getElementById('botCanvas'), ctx=cv.getContext('2d');
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+var N=110, pts=[], marks=[], LV=[0.2,0.35,0.5,0.65,0.8], buys=0, sells=0;
+var p=0.5;
+function step(){
+  var nx=p+(Math.random()-0.5)*0.07+(0.5-p)*0.04;
+  nx=Math.max(0.08,Math.min(0.92,nx));
+  LV.forEach(function(L){
+    if(p>L&&nx<=L){marks.push({i:N-1,v:L,t:'b'});buys++;}
+    else if(p<L&&nx>=L){marks.push({i:N-1,v:L,t:'s'});sells++;}
+  });
+  p=nx; pts.push(p); if(pts.length>N)pts.shift();
+  marks.forEach(function(m){m.i--;}); marks=marks.filter(function(m){return m.i>=0;});
+}
+for(var k=0;k<N;k++){step();}
+buys=0;sells=0;
+function size(){var r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=Math.max(1,r.width*d);cv.height=Math.max(1,r.height*d);ctx.setTransform(d,0,0,d,0,0);}
+function draw(){
+  var w=cv.clientWidth,h=cv.clientHeight,pad=14;
+  ctx.clearRect(0,0,w,h);
+  var y=function(v){return pad+(1-v)*(h-pad*2);}, x=function(i){return pad+i*(w-pad*2)/(N-1);};
+  ctx.setLineDash([4,5]);ctx.lineWidth=1;
+  LV.forEach(function(L,i){ctx.strokeStyle=i<2?'rgba(62,230,180,.28)':i>2?'rgba(242,166,90,.28)':'rgba(154,163,178,.25)';ctx.beginPath();ctx.moveTo(pad,y(L));ctx.lineTo(w-pad,y(L));ctx.stroke();});
+  ctx.setLineDash([]);
+  var g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(62,230,180,.18)');g.addColorStop(1,'rgba(62,230,180,0)');
+  ctx.beginPath();pts.forEach(function(v,i){i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v));});
+  ctx.lineTo(x(pts.length-1),h);ctx.lineTo(x(0),h);ctx.closePath();ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();pts.forEach(function(v,i){i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v));});
+  ctx.strokeStyle='#e8eaf0';ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+  marks.forEach(function(m){
+    var mx=x(m.i),my=y(m.v),up=m.t==='b';
+    ctx.fillStyle=up?'#3ee6b4':'#f2a65a';ctx.beginPath();
+    if(up){ctx.moveTo(mx,my-7);ctx.lineTo(mx-6,my+4);ctx.lineTo(mx+6,my+4);}else{ctx.moveTo(mx,my+7);ctx.lineTo(mx-6,my-4);ctx.lineTo(mx+6,my-4);}
+    ctx.closePath();ctx.fill();
+  });
+  var lx=x(pts.length-1),ly=y(pts[pts.length-1]);
+  ctx.fillStyle='#3ee6b4';ctx.beginPath();ctx.arc(lx,ly,4.5,0,Math.PI*2);ctx.fill();
+  document.getElementById('nBuy').textContent=buys;document.getElementById('nSell').textContent=sells;
+}
+size();draw();
+if(window.ResizeObserver){new ResizeObserver(function(){size();draw();}).observe(cv);}
+if(!reduce){setInterval(function(){step();draw();},160);}
+
+apply();
+connect();
+})();
+</script>
+
+</body>
+</html>
